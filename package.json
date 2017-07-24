@@ -1,0 +1,22 @@
+{
+  "name": "dog-toolbox",
+  "version": "1.0",
+  "description": "Spacedog toolbox : dump, restore, moar coming",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "bin": {
+    "dog-toolbox-dump": "./dump.js",
+    "dog-toolbox-restore": "./restore.js"
+  },
+  "dependencies": {
+    "commander": "^2.11.0",
+    "fs-extra": "^4.0.0",
+    "mkdirp": "^0.5.1",
+    "prompt-confirm": "^1.2.0",
+    "request": "^2.81.0",
+    "request-promise": "^4.2.1"
+  }
+}

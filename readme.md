@@ -1,8 +1,6 @@
 Spacedog Toolbox
 ---
 
-**Dernière version : 1.0**
-
 Pré-requis
 ===
 
@@ -20,13 +18,13 @@ Pour mettre à jour, il faut lancer la même commande. Pour voir la version inst
 Utilisation
 ===
 
-**Dump `dog-toolbox-dump` **
+**Dump ** `dog-toolbox-dump`
 
 Il faut fournir à cette commande l'url du backend, le nom d'utilisateur et le mot de passe. Cela va créer, à l'emplacement où la commande est lancée, un répertoire `dump`. La commande va récupérer les données du backend et les persister dans le repertoire `dump`. A utiliser en coordination avec `restore`.
 
 *Exemple* : `dog-toolbox-dump -u fred -p azerty -b https://suezcantodev1`
 
-**Restore `dog-toolbox-restore` **
+**Restore ** `dog-toolbox-restore`
 
 Il faut fournir à cette commande l'url du backend, le nom d'utilisateur et le mot de passe. Il faut lancer cette commande au même niveau que le répertoire `dump`. Cette commande va lire le contenu de `dump` et créer les schémas et envoyer les données par batch de 10.
 
@@ -48,7 +46,7 @@ En local, la commande `npm link` permet d'installer la version de travail. Suite
 Publier
 ===
 
-`npm version <newVersion> && npm publish`
+`npm version <major | minor | patch> && npm publish`
 
 
 

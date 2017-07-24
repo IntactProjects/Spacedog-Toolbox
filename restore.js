@@ -10,11 +10,17 @@ program
   .option('-b, --backendurl <backendurl>', 'The backend url you want to dump')
   .option('-u, --username <username>', 'The user to authenticate as')
   .option('-p, --password <password>', 'The user\'s password')
+  .option('-m, --newpassword <newpassword>', 'Credentials password. If not set, `%Azerty12345` will be used')
   .parse(process.argv)
 
 console.log('Restore script starting.')
 
-console.log('Backendurl\t%s \nUsername\t%s \nPassword\t*****', program.backendurl, program.username)
+var defaultPassword = '%Azerty12345'
+if (program.newpassword) {
+  defaultPassword = program.newpassword
+}
+
+console.log('Backendurl\t%s \nUsername\t%s \nPassword\t***** \nNewPassword\t%s', program.backendurl, program.username, defaultPassword)
 
 function restore () {
 
@@ -48,7 +54,6 @@ function restore () {
         }))
       })
       return Promise.all(schemasRequests)
-      return Promise.resolve()
 
     }, 
     rejectLog('Error reading dump/schema')
@@ -139,12 +144,46 @@ function restore () {
   .then(
 
     function() {
-      console.log('Batch requets executed.')
+      console.log('Batch request executed.')
+      console.log('Reading credentials file.')
+      return fs.readJson('dump/data.credentials.json')
+    },
+    rejectLog('Error executing batch requets.')
+
+  )
+
+  .then(
+
+    function(_credentials) {
+      console.log('Credentials file read.')
+      console.log(`Restoring credentials with password for every user : ${defaultPassword} `)
+      var credentialsRequests = []
+      _credentials.forEach(function (c) {
+        c.password = defaultPassword
+        credentialsRequests.push(request({
+          method: 'POST',
+          url: `${program.backendurl}/1/credentials`,
+          json: true,
+          headers,
+          body: c
+        }))
+      })
+      return Promise.all(credentialsRequests)
     },
     rejectLog('Error executing batch requets.')
 
   )
   
+  .then(
+
+    function(_credentials) {
+      console.log('Credentials populated.')
+      // END
+      console.log('Finished with success !')
+    },
+    rejectLog('Error populating credentials.')
+
+  )
 
 }
 

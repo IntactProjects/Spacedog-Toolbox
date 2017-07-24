@@ -69,6 +69,7 @@ function dump () {
         data = _data
         var schemaDatasWrite = []
         data.forEach(function (schemaAndResults) {
+          console.log(`dump/data.${schemaAndResults.schema}.json (${schemaAndResults.results.length} objects)`)
           schemaDatasWrite.push(fs.writeJson(`dump/data.${schemaAndResults.schema}.json`, schemaAndResults.results))
         })
         return Promise.all(schemaDatasWrite)
@@ -81,8 +82,32 @@ function dump () {
 
       function () {
         console.log('Wrote data files')
+        console.log('Fetching credentials')
+        return getAllCredentials(program.backendurl, headers)
       },
       rejectLog('Error writing data files.')
+
+    )
+
+    .then(
+
+      function (_credentials) {
+        console.log('Got credentials')
+        console.log('Writing credentials file')
+        return fs.writeJson(`dump/data.credentials.json`, _credentials)
+      },
+      rejectLog('Error fetching credentials.')
+
+    )
+
+    .then(
+
+      function (credentials) {
+        console.log('Credentials written')
+        // END
+        console.log('Finished with success !')
+      },
+      rejectLog('Error writing credentials file.')
 
     )
 
@@ -124,6 +149,37 @@ function getAllSchemaData (backendurl, headers, schema) {
 
   return new Promise((resolve, reject) => {
     get(backendurl, headers, schema, [], 0, 1000, resolve, reject)
+  })
+}
+
+
+function getAllCredentials (backendurl, headers) {
+  var get = function(backendurl, headers, results, from, size, resolve, reject) {
+    request({
+      url: `${backendurl}/1/credentials?from=${from}&size=${size}`,
+      headers,
+      method: 'GET',
+      json: true
+    }).then(function (res) {
+      results = results.concat(res.results)
+      if (results.length < res.total) {
+        from = from + size
+        if (from >= 1000) {
+          resolve(results)  
+        } else if (from + size > 1000) {
+          size = 1000 - from
+          get(backendurl, headers, results, from, size, resolve, reject)
+        } else {
+          get(backendurl, headers, results, from, size, resolve, reject)
+        }
+      } else {
+        resolve(results)
+      }
+    }, reject)
+  }
+
+  return new Promise((resolve, reject) => {
+    get(backendurl, headers, [], 0, 1000, resolve, reject)
   })
 }
 

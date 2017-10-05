@@ -30,6 +30,8 @@ Il faut fournir à cette commande l'url du backend, le nom d'utilisateur et le m
 
 *Exemple* : `dog-toolbox-restore -u fred -p azerty -b -m $NewPassword123 https://suezcantodev2.spacedog.io`
 
+⚠️ `restore` vide le schéma et les credentials du backend cible
+
 **Limitations des commandes Dump et Restore**
 
 Ces 2 commandes ont 2 limitations : sur les `credentials` d'abord. De l'extérieur, on ne peut pas dupliquer un mot de passe. Du coup, lorsqu'on `restore` un backend, les mots de passes sont tous réinitialisées. Vous pouvez passer un paramètre à la commande `dog-toolbox-restore` pour mettre un mot de passe à tout les utilisateurs (`-m $NewPassword123`).

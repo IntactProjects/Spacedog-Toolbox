@@ -148,15 +148,21 @@ function restore () {
       Object.keys(schemas).forEach(function (schema) {
         var body = {}
         body[schema] = schemas[schema]
-        schemasRequests.push(request({
+        schemasRequests.push({
           url: `${program.backendurl}/1/schema/${schema}`,
           json: true,
           method: 'POST',
           headers,
           body
-        }))
+        })
       })
-      return Promise.all(schemasRequests)
+
+      return schemasRequests.reduce(function (previous, item) {
+        return previous.then(function () {
+          return request(item)
+        })
+      }, Promise.resolve())
+
     }, 
     rejectLog('Error reading dump/schema')
   )

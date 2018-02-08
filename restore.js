@@ -210,14 +210,17 @@ function restore () {
       var allRequests = []
       data.forEach(function (d) {
         var schema = d.schema
+        console.log(`reading ${schema} data`)
         d.data.forEach(function (o) {
-          var objectId = o.meta.id
-          delete o.meta
-          allRequests.push({
-            method: 'POST',
-            path: `/1/data/${schema}/?id=${objectId}`,
-            content: o
-          })
+          if (o !== null) {
+            var objectId = o.meta.id
+            delete o.meta
+            allRequests.push({
+              method: 'POST',
+              path: `/1/data/${schema}/?id=${objectId}`,
+              content: o
+            })
+          }
         })
       })
       var batch = []

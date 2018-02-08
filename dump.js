@@ -4,6 +4,7 @@ var fs = require('fs-extra')
 var mkdirp = require('mkdirp')
 var Confirm = require('prompt-confirm')
 var request = require('request-promise')
+var JSONStream = require('JSONStream')
 
 program
   .version(require('./package.json').version)
@@ -51,11 +52,18 @@ function dump () {
       function () {
         console.log('Wrote dump/schema.json')
         console.log('Fetching data for every schema')
-        var schemaDatasRequests = []
-        Object.keys(schemas).forEach(function (schema) {
-          schemaDatasRequests.push(getAllSchemaData(program.backendurl, headers, schema))
-        })
-        return Promise.all(schemaDatasRequests)
+
+        var _data = []
+
+        return Object.keys(schemas).reduce((previous, schema) => {
+          return previous.then(function () {
+            return getAllSchemaData(program.backendurl, headers, schema).then(function (ret) {
+              _data.push(ret)
+              return Promise.resolve(_data)
+            })
+          })
+        }, Promise.resolve(_data))
+
       },
       rejectLog('Error writing dump/schema.json')
 
@@ -70,7 +78,18 @@ function dump () {
         var schemaDatasWrite = []
         data.forEach(function (schemaAndResults) {
           console.log(`dump/data.${schemaAndResults.schema}.json (${schemaAndResults.results.length} objects)`)
-          schemaDatasWrite.push(fs.writeJson(`dump/data.${schemaAndResults.schema}.json`, schemaAndResults.results))
+          schemaDatasWrite.push(new Promise((resolve, reject) => {
+
+            var file = `dump/data.${schemaAndResults.schema}.json`
+            var transformStream = JSONStream.stringify()
+            var outputStream = fs.createWriteStream(file)
+            transformStream.pipe(outputStream)
+            schemaAndResults.results.forEach(transformStream.write)
+            transformStream.end()
+            resolve()
+
+            //fs.writeJson(`dump/data.${schemaAndResults.schema}.json`, schemaAndResults.results).then(() => {
+          }))
         })
         return Promise.all(schemaDatasWrite)
       },
@@ -124,31 +143,68 @@ new Confirm(`Confirm ? This will create a folder dump/ where you are right now`)
 
 function getAllSchemaData (backendurl, headers, schema) {
   var get = function(backendurl, headers, schema, results, from, size, resolve, reject) {
-    request({
-      url: `${backendurl}/1/search/${schema}`,
-      json: true,
-      headers,
-      method: 'POST',
-      body: {
-        from,
-        size
-      }
-    }).then(function (res) {
-      results = results.concat(res.results)
-      if (results.length < res.total) {
-        from = from + size
-        get(backendurl, headers, schema, results, from, size, resolve, reject)
-      } else {
-        resolve({
-          schema,
-          results
-        })
-      }
-    }, reject)
+
+    var delay = 10
+    if (from > 0) {
+      delay = 100
+    }
+    
+    console.log(`fetching data ... ${backendurl}/1/search/${schema} ... in ${delay/1000} seconds`)
+
+    setTimeout(function () {
+      request({
+        url: `${backendurl}/1/search/${schema}`,
+        json: true,
+        headers,
+        method: 'POST',
+        body: {
+          from,
+          size,
+          query: {
+            'range': {
+               'meta.createdAt': {
+                   'gte': '01/11/2017',
+                   'lte': '28/02/2018',
+                   'format': 'dd/MM/yyyy'
+               }
+           }
+          }
+        }
+      }).then(function (res) {
+        console.log(`fetched data ... ${backendurl}/1/search/${schema} ... from ${from} size ${size} total ${res.total}`)
+        results = results.concat(res.results)
+        if (results.length < res.total) {
+          from = from + size
+          
+          console.log(`(other(s) request(s) needed for schema ${schema} for total ${res.total})`)
+
+          if (from + size > 10000) {
+            console.log(`spacedog limitation ! cannot fetch more than 10k elements for schema ${schema} ... resolving anyway`)
+            resolve({
+              schema,
+              results
+            })  
+          } else {
+            get(backendurl, headers, schema, results, from, size, resolve, reject)
+          }
+
+        } else {
+          resolve({
+            schema,
+            results
+          })
+        }
+      }, reject)
+    }, delay)
+  }
+
+  var _size = 1000
+  if (schema === 'photo') {
+    _size = 10
   }
 
   return new Promise((resolve, reject) => {
-    get(backendurl, headers, schema, [], 0, 1000, resolve, reject)
+    get(backendurl, headers, schema, [], 0, _size, resolve, reject)
   })
 }
 

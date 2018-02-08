@@ -223,7 +223,9 @@ function restore () {
       var batch = []
       var currentTen = []
       for (var i = 0 ; i <= allRequests.length ; i++) {
-        currentTen.push(allRequests[i])
+        if (allRequests[i] !== null) {
+          currentTen.push(allRequests[i])
+        }
         if (i % 10 == 0) {
           batch.push(currentTen)
           currentTen = []

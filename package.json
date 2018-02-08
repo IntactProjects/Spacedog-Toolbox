@@ -1,6 +1,6 @@
 {
   "name": "dog-toolbox",
-  "version": "1.7.0",
+  "version": "2.0.0",
   "description": "Spacedog toolbox : dump, restore, moar coming",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
